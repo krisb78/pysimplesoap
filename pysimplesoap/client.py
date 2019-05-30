@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 import sys
 if sys.version > '3':
     unicode = str
+    basestring = str
 
 try:
     import cPickle as pickle
@@ -27,6 +28,7 @@ import logging
 import os
 import tempfile
 import warnings
+
 
 from . import __author__, __copyright__, __license__, __version__, TIMEOUT
 from .simplexml import SimpleXMLElement, TYPE_MAP, REVERSE_TYPE_MAP, Struct
@@ -264,8 +266,8 @@ class SoapClient(object):
                 if self.services is not None:
                     operation = self.get_operation(method)
                     fault_name = detailXml.children()[0].get_name()
-                    # if fault not defined in WSDL, it could be an axis or other 
-                    # standard type (i.e. "hostname"), try to convert it to string 
+                    # if fault not defined in WSDL, it could be an axis or other
+                    # standard type (i.e. "hostname"), try to convert it to string
                     fault = operation['faults'].get(fault_name) or unicode
                     detail = detailXml.children()[0].unmarshall(fault, strict=False)
                 else:
@@ -818,7 +820,7 @@ class SoapClient(object):
         # create an default service if none is given in the wsdl:
         if not services:
             services[''] = {'ports': {'': None}}
-   
+
         elements = list(e for e in elements.values() if type(e) is type) + sorted(e for e in elements.values() if not(type(e) is type))
         e = None
         self.elements = []
@@ -836,7 +838,9 @@ class SoapClient(object):
         force_download = False
         if cache:
             # make md5 hash of the url for caching...
-            filename_pkl = '%s.pkl' % hashlib.md5(url).hexdigest()
+            filename_pkl = '%s.pkl' % hashlib.md5(
+                url.encode('utf-8')
+            ).hexdigest()
             if isinstance(cache, basestring):
                 filename_pkl = os.path.join(cache, filename_pkl)
             if os.path.exists(filename_pkl):
